@@ -1,0 +1,1418 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProTrade Analytics - Institutional Trader Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Satoshi:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0D0F12;
+            --bg-secondary: #14171C;
+            --accent: #00FF66;
+            --text-primary: #F5F5F5;
+            --text-secondary: #9CA3AF;
+            --loss-color: #FF7A7A;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .font-satoshi {
+            font-family: 'Satoshi', sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(20, 23, 28, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+        }
+        
+        .neon-text {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+        
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .gradient-border {
+            position: relative;
+            border-radius: 16px;
+        }
+        
+        .gradient-border::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+            border-radius: 16px;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        
+        .sidebar-collapsed {
+            width: 80px;
+        }
+        
+        .sidebar-expanded {
+            width: 260px;
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        
+        .animated-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 2.5rem;
+        }
+        
+        .glow-pulse {
+            animation: glowPulse 2s infinite alternate;
+        }
+        
+        @keyframes glowPulse {
+            from {
+                box-shadow: 0 0 5px rgba(0, 255, 102, 0.3);
+            }
+            to {
+                box-shadow: 0 0 20px rgba(0, 255, 102, 0.7);
+            }
+        }
+        
+        .page-transition-enter {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .page-transition-enter-active {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        
+        .page-transition-enter-done {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-satoshi">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar-expanded bg-gray-900 border-r border-gray-800 transition-all duration-300 ease-in-out">
+            <div class="flex flex-col h-full py-4">
+                <div class="flex items-center justify-between px-4 py-2 mb-8">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl"></div>
+                        <span class="text-xl font-bold whitespace-nowrap">ProTrade</span>
+                    </div>
+                </div>
+                
+                <nav class="flex-1 px-2">
+                    <div class="space-y-1">
+                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-colors group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                            </svg>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-colors group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Analytics</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-colors group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Journal</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-colors group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Review</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-colors group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Research</span>
+                        </a>
+                        <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-colors group">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Settings</span>
+                        </a>
+                    </div>
+                </nav>
+                
+                <div class="px-4 py-3">
+                    <div class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-xl transition-colors cursor-pointer">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" class="w-10 h-10 rounded-full">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">Alex Morgan</p>
+                            <p class="text-xs text-gray-400">Pro Trader</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navigation -->
+            <header class="bg-gray-900 border-b border-gray-800 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button id="sidebar-toggle" class="lg:hidden text-gray-400 hover:text-white focus:outline-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                        <h1 class="text-2xl font-bold">Trading Dashboard</h1>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <button class="relative p-2 text-gray-400 hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        
+                        <div class="relative">
+                            <input type="text" placeholder="Search..." class="bg-gray-800 text-gray-200 rounded-lg py-2 px-4 pl-10 w-64 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-2.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" class="w-10 h-10 rounded-full border-2 border-green-500">
+                            <div>
+                                <p class="text-sm font-medium">Alex Morgan</p>
+                                <p class="text-xs text-gray-400">Pro Account</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Main Dashboard Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <div class="page-transition-enter-active">
+                    <!-- KPI Cards Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+                        <!-- Win Rate Card -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-3 bg-green-900 bg-opacity-30 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-green-400 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    5.2%
+                                </span>
+                            </div>
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Win Rate</h3>
+                            <p class="animated-counter text-2xl font-bold neon-text">62.8<span class="text-lg">%</span></p>
+                        </div>
+                        
+                        <!-- Total P&L Card -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-3 bg-blue-900 bg-opacity-30 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-green-400 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    12.4%
+                                </span>
+                            </div>
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Total P&L</h3>
+                            <p class="animated-counter text-2xl font-bold">$<span id="pnl-counter">0</span></p>
+                        </div>
+                        
+                        <!-- Returns Card -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-3 bg-purple-900 bg-opacity-30 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-red-400 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    3.1%
+                                </span>
+                            </div>
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Returns</h3>
+                            <p class="animated-counter text-2xl font-bold neon-text">+<span id="returns-counter">0</span><span class="text-lg">%</span></p>
+                        </div>
+                        
+                        <!-- Profit Factor Card -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-3 bg-yellow-900 bg-opacity-30 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-green-400 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    1.8%
+                                </span>
+                            </div>
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Profit Factor</h3>
+                            <p class="animated-counter text-2xl font-bold">2.4<span class="text-lg">x</span></p>
+                        </div>
+                        
+                        <!-- Average RR Card -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-3 bg-red-900 bg-opacity-30 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-green-400 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    0.4%
+                                </span>
+                            </div>
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Average RR</h3>
+                            <p class="animated-counter text-2xl font-bold neon-text">1:<span id="rr-counter">0</span></p>
+                        </div>
+                        
+                        <!-- Max Drawdown Card -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-3 bg-indigo-900 bg-opacity-30 rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-red-400 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    2.7%
+                                </span>
+                            </div>
+                            <h3 class="text-gray-400 text-sm font-medium mb-1">Max Drawdown</h3>
+                            <p class="animated-counter text-2xl font-bold text-red-400">-<span id="drawdown-counter">0</span><span class="text-lg">%</span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <!-- Equity Curve Chart -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Equity Curve</h2>
+                                <div class="flex space-x-2">
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">1D</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">1W</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">1M</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-green-900 bg-opacity-30 text-green-400">3M</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">1Y</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">ALL</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="equity-curve-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Symbol Performance Chart -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Symbol Performance</h2>
+                                <button class="text-sm text-green-400 hover:text-green-300 transition-colors flex items-center">
+                                    View Report
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="symbol-performance-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Session Performance Chart -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Session Performance</h2>
+                                <div class="flex items-center space-x-2">
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                                        <span class="text-sm text-gray-400">Winning</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                                        <span class="text-sm text-gray-400">Loss</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="session-performance-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Weekly Consistency Heatmap -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Weekly Consistency</h2>
+                                <button class="text-sm text-green-400 hover:text-green-300 transition-colors flex items-center">
+                                    Export
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="chart-container flex items-center justify-center">
+                                <div class="grid grid-cols-7 gap-1">
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">Mon</div>
+                                        <div class="w-10 h-10 rounded bg-green-900 bg-opacity-40"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">Tue</div>
+                                        <div class="w-10 h-10 rounded bg-green-900 bg-opacity-70"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">Wed</div>
+                                        <div class="w-10 h-10 rounded bg-green-900 bg-opacity-20"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">Thu</div>
+                                        <div class="w-10 h-10 rounded bg-green-900 bg-opacity-90"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">Fri</div>
+                                        <div class="w-10 h-10 rounded bg-green-900 bg-opacity-60"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">Sat</div>
+                                        <div class="w-10 h-10 rounded bg-gray-800"></div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-gray-500 mb-1">Sun</div>
+                                        <div class="w-10 h-10 rounded bg-gray-800"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Risk-to-Reward Analytics -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800 lg:col-span-2">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Risk-to-Reward Analytics</h2>
+                                <div class="flex space-x-2">
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">Setup</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-green-900 bg-opacity-30 text-green-400">Execution</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">Overall</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="risk-reward-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Features Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- AI Trade Review -->
+                        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">AI Trade Review</h2>
+                                <button class="px-4 py-2 bg-green-900 bg-opacity-30 text-green-400 rounded-lg hover:bg-opacity-40 transition-colors flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                    </svg>
+                                    Upload Screenshot
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div class="border border-gray-800 rounded-xl p-4 hover:border-green-500 transition-colors cursor-pointer">
+                                    <div class="flex items-center mb-3">
+                                        <img src="https://via.placeholder.com/60x60" alt="Trade" class="w-14 h-14 rounded-lg mr-4">
+                                        <div>
+                                            <h3 class="font-medium">AAPL Long - 200% Return</h3>
+                                            <p class="text-sm text-gray-400">05-15-2023 • 2 min read</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-300 mb-3">Great entry on AAPL ahead of earnings. Strong volume confirmation and RSI divergence detected.</p>
+                                    <div class="flex items-center text-sm">
+                                        <span class="bg-green-900 bg-opacity-30 text-green-400 px-2 py-1 rounded mr-2">Entry: 172.3</span>
+                                        <span class="bg-red-900 bg-opacity-30 text-red-400 px-2 py-1 rounded">Exit: 217.8</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-800 rounded-xl p-4 hover:border-green-500 transition-colors cursor-pointer">
+                                    <div class="flex items-center mb-3">
+                                        <img src="https://via.placeholder.com/60x60" alt="Trade" class="w-14 h-14 rounded-lg mr-4">
+                                        <div>
+                                            <h3 class="font-medium">BTC Short - 45% Return</h3>
+                                            <p class="text-sm text-gray-400">05-12-2023 • 3 min read</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-300 mb-3">Perfect short setup on BTC with bearish engulfing pattern and negative divergence on RSI.</p>
+                                    <div class="flex items-center text-sm">
+                                        <span class="bg-green-900 bg-opacity-30 text-green-400 px-2 py-1 rounded mr-2">Entry: 30200</span>
+                                        <span class="bg-red-900 bg-opacity-30 text-red-400 px-2 py-1 rounded">Exit: 20400</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-800 pt-4">
+                                <h3 class="font-medium mb-3">AI Analysis</h3>
+                                <div class="bg-gray-800 bg-opacity-50 rounded-xl p-4">
+                                    <p class="text-sm text-gray-300 mb-3">Your trades show a strong edge in momentum plays with average holding period of 3.2 days. Consider tightening stops on low volatility entries.</p>
+                                    <div class="flex items-center text-sm text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        Confidence Score: 92%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Daily Trading Journal -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Daily Journal</h2>
+                                <button class="text-green-400 hover:text-green-300 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <form class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-1">Date</label>
+                                    <input type="date" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-1">Symbol</label>
+                                    <input type="text" placeholder="AAPL, BTC, etc." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-1">Trade Type</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button type="button" class="py-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors">Long</button>
+                                        <button type="button" class="py-2 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors">Short</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-1">Entry</label>
+                                        <input type="number" placeholder="0.00" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-center font-mono text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-1">Exit</label>
+                                        <input type="number" placeholder="0.00" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-center font-mono text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400 mb-1">Size</label>
+                                        <input type="number" placeholder="1" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-center font-mono text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-400 mb-1">Notes</label>
+                                    <textarea rows={3} placeholder="Trade rationale, lessons learned..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+                                </div>
+                                
+                                <button type="submit" class="w-full py-2 bg-green-900 bg-opacity-30 text-green-400 rounded-lg hover:bg-opacity-40 transition-colors">Save Entry</button>
+                            </form>
+                        </div>
+                        
+                        <!-- Setup Grading System -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Setup Grading</h2>
+                                <span class="text-sm bg-green-900 bg-opacity-30 text-green-400 px-2 py-1 rounded">Grade: A</span>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm text-gray-400">Entry Timing</span>
+                                        <span class="text-sm font-mono">92%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-800 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm text-gray-400">Risk Management</span>
+                                        <span class="text-sm font-mono">88%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-800 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 88%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm text-gray-400">Market Context</span>
+                                        <span class="text-sm font-mono">95%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-800 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 95%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm text-gray-400">Trade Execution</span>
+                                        <span class="text-sm font-mono">78%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-800 rounded-full h-2">
+                                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 78%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between mb-1">
+                                        <span class="text-sm text-gray-400">Exit Strategy</span>
+                                        <span class="text-sm font-mono">85%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-800 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-4 border-t border-gray-800">
+                                <h3 class="font-medium mb-2">Weaknesses</h3>
+                                <ul class="text-sm text-gray-400 space-y-1">
+                                    <li class="flex items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        Early profit taking on 35% of trades
+                                    </li>
+                                    <li class="flex items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        Holding losers too long in sideways markets
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Discipline Tracker -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Discipline Tracker</h2>
+                                <button class="text-sm text-green-400 hover:text-green-300 transition-colors">View History</button>
+                            </div>
+                            
+                            <div class="flex items-center mb-6">
+                                <div class="relative">
+                                    <svg class="w-32 h-32">
+                                        <circle cx="64" cy="64" r="56" stroke="#374151" stroke-width="12" fill="none"></circle>
+                                        <circle cx="64" cy="64" r="56" stroke="#00FF66" stroke-width="12" fill="none" 
+                                                stroke-dasharray="351.86" stroke-dashoffset="87.96" class="progress-ring"></circle>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <span class="text-3xl font-bold neon-text">75%</span>
+                                    </div>
+                                </div>
+                                <div class="ml-6">
+                                    <p class="text-gray-400 mb-1">Monthly Discipline Score</p>
+                                    <p class="text-2xl font-bold">Excellent</p>
+                                    <div class="flex items-center mt-2">
+                                        <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                                        <span class="text-sm text-gray-400">12 on-time trades</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                                        <span class="text-sm text-gray-400">3 emotional trades</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-gray-800 bg-opacity-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-green-900 bg-opacity-30 flex items-center justify-center mr-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">Stick to Plan</p>
+                                            <p class="text-xs text-gray-400">Last 7 days</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-green-400 font-bold">100%</span>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-3 bg-gray-800 bg-opacity-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-red-900 bg-opacity-30 flex items-center justify-center mr-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium">Overtrading</p>
+                                            <p class="text-xs text-gray-400">Last 7 days</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-red-400 font-bold">5%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Killzone Tracker -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Killzone Tracker</h2>
+                                <button class="text-sm text-green-400 hover:text-green-300 transition-colors">Set Alerts</button>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-400">Best Time to Trade</span>
+                                    <span class="font-mono text-green-400">09:00-11:00 EST</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-2.5">
+                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-2.5 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-400">Worst Time to Trade</span>
+                                    <span class="font-mono text-red-400">14:00-16:00 EST</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-2.5">
+                                    <div class="bg-gradient-to-r from-red-500 to-orange-500 h-2.5 rounded-full" style="width: 25%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4 mt-6">
+                                <div class="bg-gray-800 bg-opacity-50 rounded-xl p-4">
+                                    <p class="text-gray-400 text-sm mb-1">Today's Killzones</p>
+                                    <p class="font-mono text-lg neon-text">2</p>
+                                </div>
+                                <div class="bg-gray-800 bg-opacity-50 rounded-xl p-4">
+                                    <p class="text-gray-400 text-sm mb-1">Avoided</p>
+                                    <p class="font-mono text-lg text-green-400">1</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-4 border-t border-gray-800">
+                                <h3 class="font-medium mb-3">Recent Killzones</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-sm">FOMC Meeting</p>
+                                            <p class="text-xs text-gray-400">14:00 EST • High Impact</p>
+                                        </div>
+                                        <span class="text-xs bg-red-900 bg-opacity-30 text-red-400 px-2 py-1 rounded">Missed</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium text-sm">AAPL Earnings</p>
+                                            <p class="text-xs text-gray-400">20:00 EST • High Impact</p>
+                                        </div>
+                                        <span class="text-xs bg-green-900 bg-opacity-30 text-green-400 px-2 py-1 rounded">Avoided</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- News Impact Tracker -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">News Impact</h2>
+                                <button class="text-sm text-green-400 hover:text-green-300 transition-colors">Settings</button>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <span class="text-gray-400">News Sentiment</span>
+                                    <span class="text-sm font-medium">Bullish</span>
+                                </div>
+                                <div class="flex space-x-1">
+                                    <div class="flex-1 bg-gray-800 rounded-t-lg" style="height: 40px"></div>
+                                    <div class="flex-1 bg-green-900 bg-opacity-50 rounded-t-lg" style="height: 60px"></div>
+                                    <div class="flex-1 bg-green-900 bg-opacity-70 rounded-t-lg" style="height: 80px"></div>
+                                    <div class="flex-1 bg-green-900 bg-opacity-30 rounded-t-lg" style="height: 45px"></div>
+                                    <div class="flex-1 bg-gray-800 rounded-t-lg" style="height: 30px"></div>
+                                </div>
+                                <div class="flex justify-between mt-1 text-xs text-gray-500">
+                                    <span>Mon</span>
+                                    <span>Tue</span>
+                                    <span>Wed</span>
+                                    <span>Thu</span>
+                                    <span>Fri</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="border border-gray-800 rounded-xl p-4 hover:border-green-500 transition-colors cursor-pointer">
+                                    <div class="flex items-start">
+                                        <div class="bg-blue-900 bg-opacity-30 p-2 rounded-lg mr-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h3 class="font-medium mb-1">Fed Interest Rate Decision</h3>
+                                            <p class="text-sm text-gray-400 mb-2">Tomorrow 14:00 EST • High Impact</p>
+                                            <div class="flex items-center">
+                                                <span class="text-xs bg-red-900 bg-opacity-30 text-red-400 px-2 py-1 rounded mr-2">High Volatility</span>
+                                                <span class="text-xs text-gray-500">SPY, USD, Gold</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-800 rounded-xl p-4 hover:border-green-500 transition-colors cursor-pointer">
+                                    <div class="flex items-start">
+                                        <div class="bg-green-900 bg-opacity-30 p-2 rounded-lg mr-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h3 class="font-medium mb-1">Tech Earnings Week</h3>
+                                            <p class="text-sm text-gray-400 mb-2">Next Week • Multiple Reports</p>
+                                            <div class="flex items-center">
+                                                <span class="text-xs bg-green-900 bg-opacity-30 text-green-400 px-2 py-1 rounded mr-2">Opportunity</span>
+                                                <span class="text-xs text-gray-500">AAPL, MSFT, GOOGL</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- HTF/LTF Bias Alignment -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Bias Alignment</h2>
+                                <div class="text-sm">
+                                    <span class="text-gray-400">Confidence:</span>
+                                    <span class="font-medium text-green-400 ml-1">82%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-400">HTF Bias</span>
+                                    <span class="font-medium text-green-400">Bullish</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-3">
+                                    <div class="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full" style="width: 75%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-400">LTF Bias</span>
+                                    <span class="font-medium text-blue-400">Neutral</span>
+                                </div>
+                                <div class="w-full bg-gray-800 rounded-full h-3">
+                                    <div class="bg-gradient-to-r from-blue-500 to-cyan-500 h-3 rounded-full" style="width: 50%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gray-800 bg-opacity-50 rounded-xl p-4 mb-6">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-400">Overall Alignment</span>
+                                    <span class="text-lg font-bold neon-text">Mixed</span>
+                                </div>
+                                <div class="mt-2 w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                                    <span class="text-sm">Higher Timeframe: Strong Support at 4100</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                                    <span class="text-sm">Lower Timeframe: Range-bound between 4150-4200</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                                    <span class="text-sm">Suggestion: Wait for breakout confirmation</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- SMT Divergence Notes -->
+                        <div class="glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">SMT Divergence</h2>
+                                <button class="text-sm text-green-400 hover:text-green-300 transition-colors">View All</button>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <span class="text-gray-400">Active Divergences</span>
+                                    <span class="text-2xl font-bold neon-text">3</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="bg-gray-800 bg-opacity-50 rounded-xl p-3 text-center">
+                                        <div class="text-2xl font-bold text-green-400">2</div>
+                                        <div class="text-xs text-gray-400">Bullish</div>
+                                    </div>
+                                    <div class="bg-gray-800 bg-opacity-50 rounded-xl p-3 text-center">
+                                        <div class="text-2xl font-bold text-red-400">1</div>
+                                        <div class="text-xs text-gray-400">Bearish</div>
+                                    </div>
+                                    <div class="bg-gray-800 bg-opacity-50 rounded-xl p-3 text-center">
+                                        <div class="text-2xl font-bold text-yellow-400">0</div>
+                                        <div class="text-xs text-gray-400">Neutral</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-green-500 pl-4 py-1">
+                                    <h3 class="font-medium text-green-400">NVDA - Bullish Hidden Divergence</h3>
+                                    <p class="text-sm text-gray-400">On 4H chart, price making higher low while RSI making higher low</p>
+                                </div>
+                                <div class="border-l-4 border-red-500 pl-4 py-1">
+                                    <h3 class="font-medium text-red-400">TSLA - Bearish Regular Divergence</h3>
+                                    <p class="text-sm text-gray-400">On daily chart, price making higher high while RSI making lower high</p>
+                                </div>
+                                <div class="border-l-4 border-green-500 pl-4 py-1">
+                                    <h3 class="font-medium text-green-400">ETH - Bullish RSI Divergence</h3>
+                                    <p class="text-sm text-gray-400">On 1D chart, forming higher low pattern with bullish divergence</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Trade Replay Section -->
+                        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-lg font-semibold">Trade Replay</h2>
+                                <div class="flex space-x-2">
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-gray-800 text-gray-300 hover:text-white transition-colors">My Trades</button>
+                                    <button class="px-3 py-1 text-sm rounded-lg bg-green-900 bg-opacity-30 text-green-400">Top Performers</button>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="border border-gray-800 rounded-xl overflow-hidden hover:border-green-500 transition-colors cursor-pointer">
+                                    <div class="p-4 bg-gray-800 bg-opacity-50">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium">AAPL Long</span>
+                                            <span class="text-sm text-green-400">+24.5%</span>
+                                        </div>
+                                        <div class="text-xs text-gray-400 mt-1">May 10, 2023 • 2 days holding</div>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm text-gray-400">Entry</span>
+                                            <span class="font-mono text-sm">$172.30</span>
+                                        </div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm text-gray-400">Exit</span>
+                                            <span class="font-mono text-sm">$214.50</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-400">Risk</span>
+                                            <span class="font-mono text-sm">$5.20 (3%)</span>
+                                        </div>
+                                    </div>
+                                    <div class="h-40 bg-gray-900 flex items-center justify-center text-gray-600">
+                                        Chart Visualization
+                                    </div>
+                                </div>
+                                
+                                <div class="border border-gray-800 rounded-xl overflow-hidden hover:border-green-500 transition-colors cursor-pointer">
+                                    <div class="p-4 bg-gray-800 bg-opacity-50">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium">BTC Short</span>
+                                            <span class="text-sm text-green-400">+45.0%</span>
+                                        </div>
+                                        <div class="text-xs text-gray-400 mt-1">May 8, 2023 • 5 days holding</div>
+                                    </div>
+                                    <div class="p-4">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm text-gray-400">Entry</span>
+                                            <span class="font-mono text-sm">$30,200</span>
+                                        </div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <span class="text-sm text-gray-400">Exit</span>
+                                            <span class="font-mono text-sm">$20,400</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-400">Risk</span>
+                                            <span class="font-mono text-sm">$2,500 (8%)</span>
+                                        </div>
+                                    </div>
+                                    <div class="h-40 bg-gray-900 flex items-center justify-center text-gray-600">
+                                        Chart Visualization
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Animated counters
+        anime({
+            targets: '#pnl-counter',
+            innerHTML: [0, 12580],
+            duration: 2000,
+            easing: 'linear',
+            round: 1
+        });
+        
+        anime({
+            targets: '#returns-counter',
+            innerHTML: [0, 18.7],
+            duration: 2000,
+            easing: 'linear',
+            round: 1
+        });
+        
+        anime({
+            targets: '#rr-counter',
+            innerHTML: [0, 2.4],
+            duration: 2000,
+            easing: 'linear',
+            round: 1
+        });
+        
+        anime({
+            targets: '#drawdown-counter',
+            innerHTML: [0, 12.4],
+            duration: 2000,
+            easing: 'linear',
+            round: 1
+        });
+        
+        // Sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('sidebar-collapsed');
+                sidebar.classList.toggle('sidebar-expanded');
+            });
+        }
+        
+        // Chart.js configurations
+        Chart.defaults.color = '#9CA3AF';
+        Chart.defaults.borderColor = '#374151';
+        
+        // Equity Curve Chart
+        const equityCtx = document.getElementById('equity-curve-chart').getContext('2d');
+        const equityGradient = equityCtx.createLinearGradient(0, 0, 0, 300);
+        equityGradient.addColorStop(0, 'rgba(0, 255, 102, 0.4)');
+        equityGradient.addColorStop(1, 'rgba(0, 255, 102, 0.05)');
+        
+        new Chart(equityCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Equity',
+                    data: [10000, 10500, 9800, 11200, 12580, 14100],
+                    borderColor: '#00FF66',
+                    backgroundColor: equityGradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#00FF66',
+                    pointBorderColor: '#00FF66',
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        titleColor: '#F5F5F5',
+                        bodyColor: '#9CA3AF',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `$${context.parsed.y.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(55, 65, 81, 0.3)'
+                        },
+                        border: {
+                            display: false
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Symbol Performance Chart
+        const symbolCtx = document.getElementById('symbol-performance-chart').getContext('2d');
+        new Chart(symbolCtx, {
+            type: 'bar',
+            data: {
+                labels: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'BTC', 'ETH', 'GOLD'],
+                datasets: [{
+                    label: 'Performance',
+                    data: [24.5, 18.3, 15.7, 12.4, 9.8, 45.0, 32.6, 8.2],
+                    backgroundColor: function(context) {
+                        const value = context.dataset.data[context.dataIndex];
+                        return value >= 0 ? 'rgba(0, 255, 102, 0.7)' : 'rgba(255, 122, 122, 0.7)';
+                    },
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        titleColor: '#F5F5F5',
+                        bodyColor: '#9CA3AF',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y >= 0 ? '+' : ''}${context.parsed.y}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(55, 65, 81, 0.3)'
+                        },
+                        border: {
+                            display: false
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Session Performance Chart
+        const sessionCtx = document.getElementById('session-performance-chart').getContext('2d');
+        new Chart(sessionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Winning', 'Loss', 'Break Even'],
+                datasets: [{
+                    data: [65, 25, 10],
+                    backgroundColor: [
+                        'rgba(0, 255, 102, 0.8)',
+                        'rgba(255, 122, 122, 0.8)',
+                        'rgba(156, 163, 175, 0.8)'
+                    ],
+                    borderWidth: 0,
+                    hoverBackgroundColor: [
+                        'rgba(0, 255, 102, 1)',
+                        'rgba(255, 122, 122, 1)',
+                        'rgba(156, 163, 175, 1)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        titleColor: '#F5F5F5',
+                        bodyColor: '#9CA3AF',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Risk-to-Reward Chart
+        const riskRewardCtx = document.getElementById('risk-reward-chart').getContext('2d');
+        const riskRewardGradient = riskRewardCtx.createLinearGradient(0, 0, 0, 300);
+        riskRewardGradient.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
+        riskRewardGradient.addColorStop(0.5, 'rgba(245, 158, 11, 0.4)');
+        riskRewardGradient.addColorStop(1, 'rgba(16, 185, 129, 0.4)');
+        
+        new Chart(riskRewardCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Risk-Reward Ratio',
+                    data: [1.8, 2.1, 1.6, 2.4, 2.2, 2.6],
+                    borderColor: '#00FF66',
+                    backgroundColor: riskRewardGradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#00FF66',
+                    pointBorderColor: '#00FF66',
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y',
+                    borderWidth: 2
+                }, {
+                    label: 'Win Rate',
+                    data: [58, 62, 55, 65, 68, 70],
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: '#3B82F6',
+                    pointBorderColor: '#3B82F6',
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y1',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                        titleColor: '#F5F5F5',
+                        bodyColor: '#9CA3AF',
+                        borderColor: '#374151',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.datasetIndex === 0) {
+                                    label += context.parsed.y + 'x';
+                                } else {
+                                    label += context.parsed.y + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: {
+                            color: 'rgba(55, 65, 81, 0.3)'
+                        },
+                        border: {
+                            display: false
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + 'x';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Risk-Reward Ratio',
+                            color: '#9CA3AF'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        border: {
+                            display: false
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Win Rate',
+                            color: '#9CA3AF'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Page transition animation
+        const pageContent = document.querySelector('.page-transition-enter-active');
+        anime({
+            targets: pageContent,
+            opacity: [0, 1],
+            translateY: [20, 0],
+            duration: 800,
+            easing: 'easeOutQuad',
+            complete: function() {
+                pageContent.classList.add('page-transition-enter-done');
+            }
+        });
+    </script>
+</body>
+</html>
